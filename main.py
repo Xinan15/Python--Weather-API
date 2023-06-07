@@ -1,21 +1,32 @@
 from flask import Flask, render_template
+import pandas as pd
 
 app = Flask(__name__)
-
-
 # create an app variable
 # domain name + /home
+
+stations = pd.read_csv("data_small/stations.txt", skiprows=17)
+stations = stations[["STAID", "STANAME                                 "]]
+
+
 @app.route("/")
 def home():
-    return render_template("home.html")
+    return render_template("home.html", data=stations.to_html())
 
 
 # Now we need to connect the html pages with this website object
 # use @ symbol to refer to the app variable and refer to the root method of the app object
 
 @app.route("/api/v1/<station>/<date>")
-def about():
-    return render_template("about.html")
+def about(station, date):
+    filename = "data_small/TG_STAID" + str(station).zfill(6) + ".txt"
+    df = pd.read_csv(filename, skiprows=20, parse_dates=["    DATE"])
+    temperature = df.loc[df["    DATE"] == date]["   TG"].squeeze() / 10
+    return {
+        "station": station,
+        "date": date,
+        "temperature": temperature
+    }
 
 
 if __name__ == "__main__":
